@@ -2,6 +2,8 @@ import json
 import asyncio
 import logging
 from fastapi import WebSocket, WebSocketDisconnect
+
+from core.metrics import subscribers_connected, messages_published_total
 from core.models import WSMessage
 from core.topic_manager import topic_manager, Subscriber
 from core.utils import safe_put_to_queue
@@ -42,6 +44,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
 
             if msg.type == "subscribe":
+                subscribers_connected.inc()
                 try:
                     topic = await topic_manager.get_topic(msg.topic)
                 except KeyError:
@@ -59,6 +62,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
 
             if msg.type == "unsubscribe":
+                subscribers_connected.dec()
                 try:
                     topic = await topic_manager.get_topic(msg.topic)
                     sub = topic.subscribers.pop(msg.client_id, None)
@@ -69,6 +73,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
 
             if msg.type == "publish":
+                messages_published_total.inc()
                 try:
                     topic = await topic_manager.get_topic(msg.topic)
                 except KeyError:

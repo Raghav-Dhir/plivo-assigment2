@@ -1,6 +1,7 @@
 import logging
 import asyncio
 import os
+from core.metrics import messages_dropped_total
 
 logger = logging.getLogger("pubsub")
 
@@ -19,11 +20,13 @@ async def safe_put_to_queue(sub, item) -> bool:
                 pass
             try:
                 sub.queue.put_nowait(item)
-                logger.debug("Dropped oldest for subscriber=%s", sub.client_id)
+                messages_dropped_total.inc()
                 return True
             except asyncio.QueueFull:
+                messages_dropped_total.inc()
                 return False
         else:  # disconnect
+            messages_dropped_total.inc()
             logger.warning("Disconnecting slow consumer %s", sub.client_id)
             try:
                 await sub.websocket.send_json({

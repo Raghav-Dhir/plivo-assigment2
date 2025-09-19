@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import JSONResponse
+
+from core.metrics import topics_total, prometheus_metrics
 from core.topic_manager import topic_manager
 
 router = APIRouter()
@@ -38,3 +40,10 @@ async def health():
 async def stats():
     topics = await topic_manager.list_topics()
     return {"topics":[{"name":t.name,"subscribers":len(t.subscribers),"messages":t.total_messages} for t in topics]}
+
+@router.get("/metrics")
+async def metrics():
+    topics = await topic_manager.list_topics()
+    topics_total.set(len(topics))
+    data, content_type = prometheus_metrics()
+    return Response(content=data, media_type=content_type)

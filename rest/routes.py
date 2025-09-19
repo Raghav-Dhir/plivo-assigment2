@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse
 
 from core.metrics import topics_total, prometheus_metrics
 from core.topic_manager import topic_manager
+import time
+from core.config import START_TIME
 
 router = APIRouter()
 
@@ -15,7 +17,7 @@ async def create_topic(payload: dict):
         await topic_manager.create_topic(name)
     except ValueError:
         return JSONResponse({"error":"topic_exists"}, status_code=409)
-    return {"name": name}
+    return {"status": "created", "topic": name}
 
 @router.delete("/topics/{name}")
 async def delete_topic(name: str):
@@ -23,23 +25,38 @@ async def delete_topic(name: str):
         await topic_manager.delete_topic(name)
     except KeyError:
         raise HTTPException(status_code=404, detail="topic_not_found")
-    return {"deleted": name}
+    return {"status": "deleted", "topic": name}
 
 @router.get("/topics")
 async def list_topics():
     topics = await topic_manager.list_topics()
-    return [{"name": t.name, "subscribers": len(t.subscribers), "messages": t.total_messages} for t in topics]
+    topics_list = [
+        {"name": t.name, "subscribers": len(t.subscribers)}
+        for t in topics
+    ]
+    return {"topics": topics_list}
 
 @router.get("/health")
 async def health():
     topics = await topic_manager.list_topics()
     total_subs = sum(len(t.subscribers) for t in topics)
-    return {"status": "ok", "topics": len(topics), "subscribers": total_subs}
+    uptime_seconds = int(time.time() - START_TIME)
+    return {
+        "topics": len(topics),
+        "subscribers": total_subs,
+        "uptime_seconds": uptime_seconds
+    }
 
 @router.get("/stats")
 async def stats():
     topics = await topic_manager.list_topics()
-    return {"topics":[{"name":t.name,"subscribers":len(t.subscribers),"messages":t.total_messages} for t in topics]}
+    topics_dict = {
+        t.name: {
+            "messages": t.total_messages,
+            "subscribers": len(t.subscribers)
+        } for t in topics
+    }
+    return {"topics": topics_dict}
 
 @router.get("/metrics")
 async def metrics():

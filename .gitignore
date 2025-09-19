@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# PyCharm / IDE
+.idea/
+.vscode/
+
+# pytest cache
+.pytest_cache/
+.coverage

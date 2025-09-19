@@ -19,10 +19,10 @@ async def test_websocket():
             "type": "publish",
             "topic": "test",
             "message": {
-                "id": "3f1e2b7a-8c4d-4f6a-9a12-5d2b7f1e8c9a",  # unique message ID
+                "id": "3f1e2b7a-8c4d-4f6a-9a12-5d2b7f1e8c9a",
                 "payload": "Hello, World!"
             },
-            "request_id": "req-1"  # optional, for tracking ACK
+            "request_id": "req-1"
         }
         await ws.send(json.dumps(publish_msg))
         print("Published message to topic 'test'")
@@ -36,5 +36,4 @@ async def test_websocket():
                 print("Connection closed")
                 break
 
-# Run the async function
 asyncio.run(test_websocket())
